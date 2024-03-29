@@ -1,0 +1,66 @@
+theme = "monokai_pro_ristretto"
+
+[editor]
+scroll-lines = 1
+completion-trigger-len = 1
+true-color = true
+auto-pairs = true #insert parenthesis in pair
+rulers = [120]
+idle-timeout = 50
+
+line-number = "relative"
+color-modes = true
+mouse = true
+cursorline = true
+
+[editor.file-picker]
+hidden = true
+
+[editor.statusline]
+left = ["mode", "spinner"]
+center = ["file-name"]
+right = ["diagnostics", "workspace-diagnostics", "selections", "position", "position-percentage"]
+separator = "│"
+
+[editor.cursor-shape] 
+normal = "block"
+insert = "bar"
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
+
+[editor.soft-wrap]
+enable = true
+
+[keys.insert]
+"C-s" = [":w","normal_mode"]
+"C-space" = "completion"
+"C-`" = "toggle_comments"
+
+
+
+[keys.normal]
+#Reverse delete behaviour
+d="delete_selection_noyank"
+A-d="delete_selection"
+
+"ret" = ["open_below", "normal_mode"]
+"C-`" = "toggle_comments"
+"C-s" = [":w","normal_mode"]
+
+#Select upstream
+X=["extend_line_up","extend_to_line_bounds"]
+#Delete line
+D=["extend_to_line_bounds","delete_selection_noyank"]
+
+[keys.normal.q]
+w = [":w!"]
+q = [":w!",":bc!"]
+x = [":wa!", ":q!"]
+r = ["select_register"] 
+c = [":buffer-close-all"] 
+o = [":buffer-close-others"] 
+
+[keys.select]
+X=["extend_line_up","extend_to_line_bounds"]

@@ -1,0 +1,2 @@
+alias ka="ssh-add -K"
+alias kl="ssh-add -L"
