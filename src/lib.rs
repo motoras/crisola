@@ -1,3 +1,6 @@
+mod conn;
+pub mod peer;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }

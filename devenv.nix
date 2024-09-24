@@ -11,6 +11,7 @@
     pkgs.gcc
     pkgs.helix
     pkgs.just
+    pkgs.cargo-nextest
     pkgs.openssh
     pkgs.rustup
     pkgs.yubikey-manager
@@ -20,6 +21,7 @@
     pkgs.bmon
     pkgs.curl
     pkgs.commitizen
+    pkgs.dua
     pkgs.eza
     pkgs.fd
     pkgs.fzf
@@ -27,6 +29,7 @@
     pkgs.hyperfine
     pkgs.jq
     pkgs.jless
+    pkgs.netcat-gnu
     pkgs.ouch
     pkgs.ripgrep
     pkgs.xclip

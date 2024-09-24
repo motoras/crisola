@@ -1,6 +1,13 @@
 [package]
 name = "crisola"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
+mio = {version="0.8.11", features = ["os-poll", "net"] }
+netdev = "0.24.0"
+
+[[example]]
+name = "listener"
+path = "examples/minimal/listener.rs"
+
