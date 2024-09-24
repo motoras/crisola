@@ -7,7 +7,7 @@ use std::{
         mpsc::{channel, Receiver, Sender},
         Arc,
     },
-    thread::Scope,
+    thread::{Scope, ScopedJoinHandle},
     time::Duration,
 };
 
@@ -41,12 +41,15 @@ impl Eq for Channel {}
 pub fn new_peer<'scp, 'env>(
     addr: SocketAddr,
     scope: &'scp Scope<'scp, 'env>,
-) -> IoResult<PeerManager> {
+) -> IoResult<(
+    PeerManager,
+    ScopedJoinHandle<'scp, Result<(), std::io::Error>>,
+)> {
     if !addr.ip().is_multicast() {
         return Err(ErrorKind::AddrInUse.into());
     }
     let mut poll = Poll::new()?;
-    let mut events = Events::with_capacity(1);
+    let mut events = Events::with_capacity(16);
 
     // bind us to the socket address.
     let mut socket = UdpSocket::bind(addr)?;
@@ -70,7 +73,7 @@ pub fn new_peer<'scp, 'env>(
         let (sx, rx) = channel();
         (rx, PeerManager::new(sx, Arc::new(waker)))
     };
-    scope.spawn(move || -> IoResult<()> {
+    let handle = scope.spawn(move || -> IoResult<()> {
         let mut subscribers: Vec<(u16, Subscriber)> = Vec::with_capacity(128);
         let mut buf = [0; 1 << 16];
         loop {
@@ -91,7 +94,6 @@ pub fn new_peer<'scp, 'env>(
                                 for (_cid, subscr) in &subscribers {
                                     subscr(1, &buf[..packet_size]);
                                 }
-                                // socket.send_to(&buf[..packet_size], addr)?;
                             }
                             Err(e) if e.kind() == ErrorKind::WouldBlock => {
                                 break;
@@ -109,14 +111,13 @@ pub fn new_peer<'scp, 'env>(
                                     cid,
                                     subscriber: listener,
                                 } => {
-                                    subscribers.retain(|(ccid, _)| cid != *ccid);
                                     subscribers.push((cid, listener));
                                 }
                                 PeerCommand::UnSubscribe { cid } => {
                                     subscribers.retain(|(ccid, _)| cid != *ccid)
                                 }
-                                PeerCommand::Publish { cid: _, msg } => {
-                                    // socket.send(&msg[..])?;
+                                PeerCommand::Publish { cid, msg } => {
+                                    socket.send(&msg.pack(cid, 1)[..])?;
                                 }
                                 PeerCommand::Stop => return Ok(()),
                             }
@@ -130,13 +131,20 @@ pub fn new_peer<'scp, 'env>(
         }
         // println!("Peer shuted down!!!!");
     });
-    Ok(peer_manager)
+    Ok((peer_manager, handle))
+}
+
+#[derive(Debug)]
+struct ChannelState {
+    id: u16,
+    seq: u64,
 }
 
 //will keep  80  bytes for possible headers
 const MAX_MSG_LEN: u16 = 65399;
 
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Message {
     data: Vec<u8>,
 }
@@ -153,11 +161,12 @@ impl Message {
         Message { data }
     }
 
-    pub fn put_u16(&mut self, short: u16) {
-        todo!()
-    }
-    pub fn put_u64(&mut self, long: u64) {
-        todo!()
+    pub(crate) fn pack(mut self, cid: u16, cseq: u64) -> Vec<u8> {
+        let cid_b = cid.to_le_bytes();
+        self.data[0..2].copy_from_slice(&cid_b[..]);
+        let cseq_b = cseq.to_le_bytes();
+        self.data[2..10].copy_from_slice(&cseq_b[..]);
+        self.data
     }
 }
 
